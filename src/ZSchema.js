@@ -27,22 +27,23 @@
 /*jshint -W044*/
 /*global ZSchema*/
 
-(function () {
+(function() {
     'use strict';
 
     var Promise = require('bluebird');
     var request = require('request');
 
     // z-schema used Q before bluebird, so alias is here to preserve compatibility
-    Promise.prototype.fail = Promise.prototype.catch;
+    Promise.prototype.fail = Promise.prototype.
+    catch;
 
     /***** ValidationError class *****/
 
-    var ValidationError = function (code, message, params, path) {
-        this.code    = code;
+    var ValidationError = function(code, message, params, path) {
+        this.code = code;
         this.message = message;
-        this.path    = path || '';
-        this.params  = params || {};
+        this.path = path || '';
+        this.params = params || {};
     };
 
     ValidationError.prototype = new Error();
@@ -92,20 +93,22 @@
         'SCHEMA_TYPE_EXPECTED': 'Schema is expected to be of type "object"'
     };
 
-    ValidationError.prototype.addSubError = function (err) {
-        if (!this.subErrors) { this.subErrors = []; }
+    ValidationError.prototype.addSubError = function(err) {
+        if (!this.subErrors) {
+            this.subErrors = [];
+        }
         this.subErrors.push(err);
     };
 
-    ValidationError.createError = function (code, params, path) {
+    ValidationError.createError = function(code, params, path) {
         var msg = ValidationError.messages[code];
-        params  = params || {};
+        params = params || {};
 
         if (typeof msg !== 'string') {
             throw new Error('Unknown error code: ' + code);
         }
 
-        msg = msg.replace(/\{([^{}]*)\}/g, function (whole, varName) {
+        msg = msg.replace(/\{([^{}]*)\}/g, function(whole, varName) {
             var subValue = params[varName];
             if (typeof subValue === 'string' || typeof subValue === 'number') {
                 return subValue;
@@ -122,28 +125,28 @@
     /***** Utility methods *****/
 
     var Utils = {
-        isBoolean: function (what) {
+        isBoolean: function(what) {
             return typeof what === 'boolean';
         },
-        isString: function (what) {
+        isString: function(what) {
             return typeof what === 'string';
         },
-        isInteger: function (what) {
+        isInteger: function(what) {
             return this.isNumber(what) && what % 1 === 0;
         },
-        isNumber: function (what) {
+        isNumber: function(what) {
             return typeof what === 'number' && Number.isFinite(what);
         },
-        isArray: function (what) {
+        isArray: function(what) {
             return Array.isArray(what);
         },
-        isObject: function (what) {
+        isObject: function(what) {
             return typeof what === 'object' && what === Object(what) && !Array.isArray(what);
         },
-        isFunction: function (what) {
+        isFunction: function(what) {
             return typeof what === 'function';
         },
-        whatIs: function (what) {
+        whatIs: function(what) {
             if (what === undefined) {
                 return 'undefined';
             } else if (what === null) {
@@ -168,7 +171,7 @@
                 throw new Error('Utils.whatIs does not know what this is: ' + what);
             }
         },
-        isUniqueArray: function (arr, match) {
+        isUniqueArray: function(arr, match) {
             match = match || {};
             var i, j, l = arr.length;
             for (i = 0; i < l; i++) {
@@ -182,10 +185,10 @@
             }
             return true;
         },
-        isAbsoluteUri: function (str) {
+        isAbsoluteUri: function(str) {
             return Utils.getRegExp('^https?\:\/\/').test(str);
         },
-        forEach: function (obj, callback, context) {
+        forEach: function(obj, callback, context) {
             if (Array.isArray(obj)) {
                 return obj.forEach(callback, context);
             } else if (Utils.isObject(obj)) {
@@ -197,43 +200,43 @@
                 }
             }
         },
-        map: function (obj, callback, thisArg) {
+        map: function(obj, callback, thisArg) {
             var index = -1,
                 result = [];
 
-            Utils.forEach(obj, function (val, key) {
+            Utils.forEach(obj, function(val, key) {
                 result[++index] = callback.call(thisArg, val, key);
             });
 
             return result;
         },
-        defaults: function (main, def) {
-            Utils.forEach(def, function (val, key) {
+        defaults: function(main, def) {
+            Utils.forEach(def, function(val, key) {
                 if (main[key] === undefined) {
                     main[key] = val;
                 }
             });
             return main;
         },
-        uniq: function (arr) {
+        uniq: function(arr) {
             var rv = [];
-            arr.forEach(function (val) {
+            arr.forEach(function(val) {
                 if (rv.indexOf(val) === -1) {
                     rv.push(val);
                 }
             });
             return rv;
         },
-        difference: function (bigSet, subSet) {
+        difference: function(bigSet, subSet) {
             var rv = [];
-            bigSet.forEach(function (val) {
+            bigSet.forEach(function(val) {
                 if (subSet.indexOf(val) === -1) {
                     rv.push(val);
                 }
             });
             return rv;
         },
-        areEqual: function (json1, json2) {
+        areEqual: function(json1, json2) {
             // http://json-schema.org/latest/json-schema-core.html#rfc.section.3.6
 
             // Two JSON values are said to be equal if and only if:
@@ -283,21 +286,21 @@
 
             return false;
         },
-        decodeJSONPointer: function (str) {
+        decodeJSONPointer: function(str) {
             // http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07#section-3
-            return decodeURIComponent(str).replace(/~[0-1]/g, function (x) {
+            return decodeURIComponent(str).replace(/~[0-1]/g, function(x) {
                 return x === '~1' ? '/' : '~';
             });
         },
         _getRegExpCache: {},
-        getRegExp: function (pattern) {
+        getRegExp: function(pattern) {
             if (!this._getRegExpCache[pattern]) {
                 this._getRegExpCache[pattern] = new RegExp(pattern);
             }
             return this._getRegExpCache[pattern];
         },
         _getRemoteSchemaCache: {},
-        getRemoteSchema: function (urlWithQuery, callback) {
+        getRemoteSchema: function(urlWithQuery, callback) {
             var self = this,
                 url = urlWithQuery.split('#')[0];
 
@@ -331,7 +334,7 @@
                 return;
             }
 
-            request(url, function (error, response, body) {
+            request(url, function(error, response, body) {
                 if (error) {
                     callback(error);
                     return;
@@ -388,7 +391,7 @@
 
             return rv;
         },
-        resolveSchemaId: function (schema, id) {
+        resolveSchemaId: function(schema, id) {
             if (!this.isObject(schema) && !this.isArray(schema)) {
                 return;
             }
@@ -396,7 +399,7 @@
                 return schema;
             }
             var rv = null;
-            Utils.forEach(schema, function (val) {
+            Utils.forEach(schema, function(val) {
                 if (!rv) {
                     rv = Utils.resolveSchemaId(val, id);
                 }
@@ -411,7 +414,7 @@
      */
     /*jshint maxlen: false*/
     var FormatValidators = {
-        'date': function (date) {
+        'date': function(date) {
             if (!Utils.isString(date)) {
                 return true;
             }
@@ -428,7 +431,7 @@
             }
             return true;
         },
-        'date-time': function (dateTime) {
+        'date-time': function(dateTime) {
             if (!Utils.isString(dateTime)) {
                 return true;
             }
@@ -451,11 +454,11 @@
             }
             return true;
         },
-        'email': function (email) {
+        'email': function(email) {
             // http://fightingforalostcause.net/misc/2006/compare-email-regex.php
             return typeof email !== 'string' || Utils.getRegExp(/^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i).test(email);
         },
-        'hostname': function (hostname) {
+        'hostname': function(hostname) {
             if (!Utils.isString(hostname)) {
                 return true;
             }
@@ -493,25 +496,31 @@
             var valid = Utils.getRegExp('^[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?(\\.[a-zA-Z](([-0-9a-zA-Z]+)?[0-9a-zA-Z])?)*$').test(hostname);
             if (valid) {
                 // the sum of all label octets and label lengths is limited to 255.
-                if (hostname.length > 255) { return false; }
+                if (hostname.length > 255) {
+                    return false;
+                }
                 // Each node has a label, which is zero to 63 octets in length
                 var labels = hostname.split('.');
-                for (var i = 0; i < labels.length; i++) { if (labels[i].length > 63) { return false; } }
+                for (var i = 0; i < labels.length; i++) {
+                    if (labels[i].length > 63) {
+                        return false;
+                    }
+                }
             }
             return valid;
         },
-        'host-name': function () {
+        'host-name': function() {
             return FormatValidators.hostname.apply(this, arguments);
         },
-        'ipv4': function (ipv4) {
+        'ipv4': function(ipv4) {
             // https://www.owasp.org/index.php/OWASP_Validation_Regex_Repository
             return typeof ipv4 !== 'string' || Utils.getRegExp('^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$').test(ipv4);
         },
-        'ipv6': function (ipv6) {
+        'ipv6': function(ipv6) {
             // Stephen Ryan at Dartware @ http://forums.intermapper.com/viewtopic.php?t=452
             return typeof ipv6 !== 'string' || Utils.getRegExp('^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$').test(ipv6);
         },
-        'regex': function (str) {
+        'regex': function(str) {
             try {
                 Utils.getRegExp(str);
                 return true;
@@ -519,7 +528,7 @@
                 return false;
             }
         },
-        'uri': function (uri, validator) {
+        'uri': function(uri, validator) {
             if (validator.options.strictUris) {
                 return FormatValidators['strict-uri'].apply(this, arguments);
             }
@@ -527,43 +536,43 @@
             // RegExp from http://tools.ietf.org/html/rfc3986#appendix-B
             return typeof uri !== 'string' || Utils.getRegExp('^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?').test(uri);
         },
-        'strict-uri': function (uri) {
+        'strict-uri': function(uri) {
             // http://mathiasbynens.be/demo/url-regex
             // https://gist.github.com/dperini/729294
             return typeof uri !== 'string' || Utils.getRegExp(
                 '^' +
-                    // protocol identifier
-                    '(?:(?:https?|ftp)://)' +
-                    // user:pass authentication
-                    '(?:\\S+(?::\\S*)?@)?' +
-                    '(?:' +
-                        // IP address exclusion
-                        // private & local networks
-                        '(?!10(?:\\.\\d{1,3}){3})' +
-                        '(?!127(?:\\.\\d{1,3}){3})' +
-                        '(?!169\\.254(?:\\.\\d{1,3}){2})' +
-                        '(?!192\\.168(?:\\.\\d{1,3}){2})' +
-                        '(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})' +
-                        // IP address dotted notation octets
-                        // excludes loopback network 0.0.0.0
-                        // excludes reserved space >= 224.0.0.0
-                        // excludes network & broacast addresses
-                        // (first & last IP address of each class)
-                        '(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])' +
-                        '(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}' +
-                        '(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))' +
-                    '|' +
-                        // host name
-                        '(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)' +
-                        // domain name
-                        '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*' +
-                        // TLD identifier
-                        '(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))' +
-                    ')' +
-                    // port number
-                    '(?::\\d{2,5})?' +
-                    // resource path
-                    '(?:/[^\\s]*)?' +
+                // protocol identifier
+                '(?:(?:https?|ftp)://)' +
+                // user:pass authentication
+                '(?:\\S+(?::\\S*)?@)?' +
+                '(?:' +
+                // IP address exclusion
+                // private & local networks
+                '(?!10(?:\\.\\d{1,3}){3})' +
+                '(?!127(?:\\.\\d{1,3}){3})' +
+                '(?!169\\.254(?:\\.\\d{1,3}){2})' +
+                '(?!192\\.168(?:\\.\\d{1,3}){2})' +
+                '(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})' +
+                // IP address dotted notation octets
+                // excludes loopback network 0.0.0.0
+                // excludes reserved space >= 224.0.0.0
+                // excludes network & broacast addresses
+                // (first & last IP address of each class)
+                '(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])' +
+                '(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}' +
+                '(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))' +
+                '|' +
+                // host name
+                '(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)' +
+                // domain name
+                '(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*' +
+                // TLD identifier
+                '(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))' +
+                ')' +
+                // port number
+                '(?::\\d{2,5})?' +
+                // resource path
+                '(?:/[^\\s]*)?' +
                 '$', 'i'
             ).test(uri);
         }
@@ -572,10 +581,10 @@
 
     var CustomFormatValidators = {};
 
-    var Report = function (parentReport) {
+    var Report = function(parentReport) {
         if (parentReport) {
             this.parentReport = parentReport;
-            Utils.forEach(parentReport, function (val, key) {
+            Utils.forEach(parentReport, function(val, key) {
                 this[key] = val;
             }, this);
         }
@@ -584,7 +593,7 @@
         this.path = [];
     };
     Report.prototype = {
-        getPath: function () {
+        getPath: function() {
             var path = ['#'];
 
             if (this.parentReport) {
@@ -598,18 +607,18 @@
 
             return path.join('/');
         },
-        addWarning: function (message) {
+        addWarning: function(message) {
             this.warnings.push({
                 message: message,
                 path: this.getPath()
             });
             return true;
         },
-        addError: function (code, params, subReports) {
+        addError: function(code, params, subReports) {
             var err = ValidationError.createError(code, params, this.getPath());
             if (subReports) {
-                subReports.forEach(function (report) {
-                    report.errors.forEach(function (_err) {
+                subReports.forEach(function(report) {
+                    report.errors.forEach(function(_err) {
                         err.addSubError(_err);
                     }, this);
                 }, this);
@@ -617,7 +626,7 @@
             this.errors.push(err);
             return false;
         },
-        expect: function (bool, code, params, subReports) {
+        expect: function(bool, code, params, subReports) {
             if (!bool) {
                 this.addError(code, params, subReports);
                 return false;
@@ -625,33 +634,33 @@
                 return true;
             }
         },
-        isValid: function () {
+        isValid: function() {
             return this.errors.length === 0;
         },
-        toJSON: function () {
+        toJSON: function() {
             return {
                 valid: this.errors.length === 0,
                 errors: this.errors,
                 warnings: this.warnings
             };
         },
-        toError: function () {
+        toError: function() {
             var err = new Error('Validation failed');
             err.errors = this.errors;
             err.warnings = this.warnings;
             return err;
         },
-        toPromise: function () {
+        toPromise: function() {
             if (this.isValid()) {
                 return Promise.resolve(this);
             } else {
                 return Promise.reject(this.toError());
             }
         },
-        goDown: function (str) {
+        goDown: function(str) {
             this.path.push(str);
         },
-        goUp: function () {
+        goUp: function() {
             this.path.pop();
         }
     };
@@ -693,25 +702,25 @@
      * Error utility methods
      */
     ZSchema.expect = {
-        typeError: function (expected, what) {
+        typeError: function(expected, what) {
             return 'Type mismatch, expected "' + expected + '", got "' + Utils.whatIs(what) + '"';
         },
-        boolean: function (what) {
+        boolean: function(what) {
             if (!Utils.isBoolean(what)) {
                 throw new Error(ZSchema.expect.typeError('boolean', what));
             }
         },
-        string: function (what) {
+        string: function(what) {
             if (!Utils.isString(what)) {
                 throw new Error(ZSchema.expect.typeError('string', what));
             }
         },
-        callable: function (what) {
+        callable: function(what) {
             if (!Utils.isFunction(what)) {
                 throw new Error(ZSchema.expect.typeError('function', what));
             }
         },
-        object: function (what) {
+        object: function(what) {
             if (!Utils.isObject(what)) {
                 throw new Error(ZSchema.expect.typeError('object', what));
             }
@@ -721,7 +730,7 @@
     /*
      *  Basic validation entry, uses instance of validator with default options
      */
-    ZSchema.validate = function () {
+    ZSchema.validate = function() {
         if (!this._defaultInstance) {
             var Self = this;
             this._defaultInstance = new Self();
@@ -735,7 +744,7 @@
      *  `func` can be sync or async and can either return a promise or
      *  execute a classic callback passed as last argument
      */
-    ZSchema.registerFormat = function (name, func) {
+    ZSchema.registerFormat = function(name, func) {
         ZSchema.expect.string(name);
         ZSchema.expect.callable(func);
 
@@ -753,7 +762,7 @@
     /**
      * Register your own format validation function and tell ZSchema to call it in sync mode (performance)
      */
-    ZSchema.registerFormatSync = function (name, func) {
+    ZSchema.registerFormatSync = function(name, func) {
         func.__$sync = true;
         return ZSchema.registerFormat(name, func);
     };
@@ -762,7 +771,7 @@
      *  Convenience method if you wish to pre-load remote schemas so validator doesn't
      *  have to do that while running validation later.
      */
-    ZSchema.setRemoteReference = function (url, data) {
+    ZSchema.setRemoteReference = function(url, data) {
         ZSchema.expect.string(data);
         Utils._getRemoteSchemaCache[url] = data;
     };
@@ -777,7 +786,7 @@
      * @param {Function} [callback]
      * @returns {Object} Promise for Report
      */
-    ZSchema.prototype.validate = function (json, schema, callback) {
+    ZSchema.prototype.validate = function(json, schema, callback) {
         var self = this;
         var report = new Report();
 
@@ -797,25 +806,25 @@
 
             // schema compilation is async as some remote requests may occur
             return this._compileSchema(report, schema)
-                .then(function (compiledSchema) {
+                .then(function(compiledSchema) {
                     // schema validation
                     return self._validateSchema(report, compiledSchema)
-                        .then(function () {
+                        .then(function() {
                             // object validation against schema
                             return self._validateObject(report, compiledSchema, json)
-                                .then(function () {
+                                .then(function() {
                                     return report.toPromise();
                                 });
                         });
                 })
-                .then(function () {
+                .then(function() {
                     return report.toJSON();
                 })
                 .nodeify(callback);
         }
     };
 
-    ZSchema.prototype.getLastError = function () {
+    ZSchema.prototype.getLastError = function() {
         return this._lastError;
     };
 
@@ -825,7 +834,7 @@
      * @param {Function} [callback]
      * @returns {Object} Promise for compiled schema
      */
-    ZSchema.prototype.compileSchema = function (schema, callback) {
+    ZSchema.prototype.compileSchema = function(schema, callback) {
         var self = this;
 
         if (Array.isArray(schema)) {
@@ -844,8 +853,8 @@
                 throw report.toError();
             }
         } else {
-            return this._compileSchema(report, schema).then(function (compiledSchema) {
-                return self._validateSchema(report, compiledSchema).then(function () {
+            return this._compileSchema(report, schema).then(function(compiledSchema) {
+                return self._validateSchema(report, compiledSchema).then(function() {
                     return compiledSchema;
                 });
             }).nodeify(callback);
@@ -858,7 +867,7 @@
      * @param {Function} callback
      * @returns {Object} Promise
      */
-    ZSchema.prototype.compileSchemas = function (arr, callback) {
+    ZSchema.prototype.compileSchemas = function(arr, callback) {
         var self = this,
             compileSchemasFinished = Promise.defer(),
             compiled = [],
@@ -866,30 +875,40 @@
             lastError;
 
         var loopArrayFinished;
+
         function loopArray() {
             // condition
-            if (arr.length === 0) { return loopArrayFinished.resolve(); }
+            if (arr.length === 0) {
+                return loopArrayFinished.resolve();
+            }
             // body
             var nextSchema = arr.shift();
-            self.compileSchema(nextSchema).then(function () {
+            self.compileSchema(nextSchema).then(function() {
                 compiled.push(nextSchema);
-            }).catch(function (err) {
+            }).
+            catch (function(err) {
                 lastError = err;
                 failed.push(nextSchema);
-            }).finally(function () {
+            }).
+            finally(function() {
                 loopArray();
             });
         }
 
         var lastArrayLength;
+
         function loopCompile() {
             // condition
-            if (arr.length === 0) { return compileSchemasFinished.resolve(compiled); }
-            if (arr.length === lastArrayLength) { return compileSchemasFinished.reject(lastError); }
+            if (arr.length === 0) {
+                return compileSchemasFinished.resolve(compiled);
+            }
+            if (arr.length === lastArrayLength) {
+                return compileSchemasFinished.reject(lastError);
+            }
             // body
             lastArrayLength = arr.length;
             loopArrayFinished = Promise.defer();
-            loopArrayFinished.promise.then(function () {
+            loopArrayFinished.promise.then(function() {
                 arr = failed;
                 failed = [];
                 loopCompile();
@@ -901,7 +920,7 @@
         return compileSchemasFinished.promise.nodeify(callback);
     };
 
-    ZSchema.prototype.compileSchemasSync = function (arr) {
+    ZSchema.prototype.compileSchemasSync = function(arr) {
         var self = this,
             lastError,
             compiled,
@@ -909,7 +928,7 @@
 
         function cycle() {
             compiled = 0;
-            arr.forEach(function (sch, i) {
+            arr.forEach(function(sch, i) {
                 try {
                     self.compileSchema(sch);
                 } catch (e) {
@@ -940,7 +959,7 @@
      * @param {Function} callback
      * @returns {Object} Promise for Report
      */
-    ZSchema.prototype.validateSchema = function (schema, callback) {
+    ZSchema.prototype.validateSchema = function(schema, callback) {
         var report = new Report();
         report.expect(Utils.isObject(schema), 'SCHEMA_TYPE_EXPECTED');
 
@@ -954,7 +973,7 @@
             }
         } else {
             return this._validateSchema(report, schema)
-                .then(function () {
+                .then(function() {
                     return report.toJSON();
                 })
                 .nodeify(callback);
@@ -967,7 +986,7 @@
         if (schema.$ref) {
             arr.push(schema);
         }
-        Utils.forEach(schema, function (val, key) {
+        Utils.forEach(schema, function(val, key) {
             if (typeof key === 'string' && key.indexOf('__') === 0) {
                 return;
             }
@@ -978,7 +997,7 @@
         return arr;
     };
 
-    ZSchema.prototype._compileSchema = function (report, schema) {
+    ZSchema.prototype._compileSchema = function(report, schema) {
         // reusing of compiled schemas
         if (schema.__$compiled) {
             return this.options.sync ? schema : Promise.resolve(schema);
@@ -990,19 +1009,21 @@
 
         // then collect for downloading other schemas
         var refObjs = this._collectReferences(schema);
-        var refs = Utils.uniq(refObjs.map(function (obj) {
+        var refs = Utils.uniq(refObjs.map(function(obj) {
             return obj.$ref;
         }));
 
         function afterDownload() {
-            refObjs.forEach(function (refObj) {
+            refObjs.forEach(function(refObj) {
                 if (!refObj.__$refResolved) {
                     refObj.__$refResolved = Utils.resolveSchemaQuery(refObj, schema, refObj.$ref, true, self.options.sync) || null;
                 }
                 if (self.schemaCache && self.schemaCache[refObj.$ref]) {
                     refObj.__$refResolved = self.schemaCache[refObj.$ref];
                 }
-                report.expect(refObj.__$refResolved != null, 'UNRESOLVABLE_REFERENCE', {ref: refObj.$ref});
+                report.expect(refObj.__$refResolved != null, 'UNRESOLVABLE_REFERENCE', {
+                    ref: refObj.$ref
+                });
             });
             if (report.isValid()) {
                 schema.__$compiled = true;
@@ -1014,7 +1035,7 @@
         }
 
         function download() {
-            return refs.map(function (ref) {
+            return refs.map(function(ref) {
                 // never download itself
                 if (ref.indexOf(schema.$schema) === 0) {
                     return;
@@ -1042,7 +1063,7 @@
         if (schema.$ref && schema.__$refResolved !== null && schema.$ref.indexOf('http:') !== 0 && schema.$ref.indexOf('https:') !== 0) {
             schema.__$refResolved = Utils.resolveSchemaQuery(schema, rootSchema, schema.$ref, true, this.options.sync) || null;
         }
-        Utils.forEach(schema, function (val, key) {
+        Utils.forEach(schema, function(val, key) {
             if (typeof key === 'string' && key.indexOf('__') === 0) {
                 return;
             }
@@ -1068,7 +1089,7 @@
                 }
             }
         }
-        Utils.forEach(schema, function (val, key) {
+        Utils.forEach(schema, function(val, key) {
             if (typeof key === 'string' && key.indexOf('__') === 0) {
                 return;
             }
@@ -1082,7 +1103,7 @@
     };
 
     // download remote references when needed
-    ZSchema.prototype._downloadRemoteReferences = function (report, rootSchema, uri) {
+    ZSchema.prototype._downloadRemoteReferences = function(report, rootSchema, uri) {
         if (!rootSchema.__remotes) {
             rootSchema.__remotes = {};
         }
@@ -1103,13 +1124,13 @@
         } else {
             var self = this,
                 p = Promise.defer();
-            Utils.getRemoteSchema(uri, function (err, remoteSchema) {
+            Utils.getRemoteSchema(uri, function(err, remoteSchema) {
                 if (err) {
                     err.description = 'Connection failed to: ' + uri;
                     return p.reject(err);
                 }
                 p.resolve(self._compileSchema(report, remoteSchema)
-                    .then(function (compiledRemoteSchema) {
+                    .then(function(compiledRemoteSchema) {
                         rootSchema.__remotes[uri] = compiledRemoteSchema;
                     }));
             });
@@ -1117,7 +1138,7 @@
         }
     };
 
-    ZSchema.prototype._validateSchema = function (report, schema) {
+    ZSchema.prototype._validateSchema = function(report, schema) {
         if (schema.__$validated) {
             return this.options.sync ? schema : Promise.resolve(schema);
         }
@@ -1125,13 +1146,15 @@
         var self = this,
             hasParentSchema = schema.$schema && schema.id !== schema.$schema;
 
-        var finish = function () {
+        var finish = function() {
             // run sync validations over schema keywords
             if (self.options.noTypeless === true) {
                 report.expect(schema.type !== undefined || schema.anyOf !== undefined || schema.oneOf !== undefined ||
-                              schema.not  !== undefined || schema.$ref  !== undefined, 'KEYWORD_UNDEFINED_STRICT', {keyword: 'type'});
+                    schema.not !== undefined || schema.$ref !== undefined, 'KEYWORD_UNDEFINED_STRICT', {
+                        keyword: 'type'
+                    });
             }
-            Utils.forEach(schema, function (value, key) {
+            Utils.forEach(schema, function(value, key) {
                 if (typeof key === 'string' && key.indexOf('__') === 0) {
                     return;
                 }
@@ -1139,7 +1162,9 @@
                     SchemaValidators[key].call(self, report, schema);
                 } else if (!hasParentSchema) {
                     if (self.options.noExtraKeywords === true) {
-                        report.expect(false, 'KEYWORD_UNEXPECTED', {keyword: key});
+                        report.expect(false, 'KEYWORD_UNEXPECTED', {
+                            keyword: key
+                        });
                     } else {
                         report.addWarning('Unknown key "' + key + '" found in schema.');
                     }
@@ -1159,15 +1184,17 @@
                 return finish();
             } else {
                 var rv = Promise.defer();
-                Utils.getRemoteSchema(schema.$schema, function (err, remoteSchema) {
+                Utils.getRemoteSchema(schema.$schema, function(err, remoteSchema) {
                     if (err) {
-                        report.addError('SCHEMA_NOT_REACHABLE', {uri: schema.$schema});
+                        report.addError('SCHEMA_NOT_REACHABLE', {
+                            uri: schema.$schema
+                        });
                         rv.resolve();
                         return;
                     }
                     // prevent recursion here
                     if (schema.__$downloadedFrom !== remoteSchema.__$downloadedFrom) {
-                        self.validate(schema, remoteSchema, function (err) {
+                        self.validate(schema, remoteSchema, function(err) {
                             if (err) {
                                 report.errors = report.errors.concat(err.errors);
                             }
@@ -1184,7 +1211,7 @@
         }
     };
 
-    ZSchema.prototype._validateObject = function (report, schema, instance) {
+    ZSchema.prototype._validateObject = function(report, schema, instance) {
         ZSchema.expect.object(schema);
 
         var self = this;
@@ -1238,7 +1265,7 @@
         }
     };
 
-    ZSchema.prototype._recurseArray = function (report, schema, instance) {
+    ZSchema.prototype._recurseArray = function(report, schema, instance) {
         // http://json-schema.org/latest/json-schema-validation.html#rfc.section.8.2
 
         var p, self = this;
@@ -1248,7 +1275,7 @@
         if (Utils.isObject(schema.items)) {
 
             if (this.options.sync) {
-                instance.forEach(function (val, index) {
+                instance.forEach(function(val, index) {
                     report.goDown('[' + index + ']');
                     this._validateObject(report, schema.items, val);
                     report.goUp();
@@ -1256,11 +1283,11 @@
                 return;
             } else {
                 p = Promise.resolve();
-                instance.forEach(function (val, index) {
-                    p = p.then(function () {
+                instance.forEach(function(val, index) {
+                    p = p.then(function() {
                         report.goDown('[' + index + ']');
                         return self._validateObject(report, schema.items, val)
-                            .then(function () {
+                            .then(function() {
                                 report.goUp();
                             });
                     });
@@ -1277,7 +1304,7 @@
         if (Utils.isArray(schema.items)) {
 
             if (this.options.sync) {
-                instance.forEach(function (val, index) {
+                instance.forEach(function(val, index) {
                     // equal to doesnt make sense here
                     if (index < schema.items.length) {
                         report.goDown('[' + index + ']');
@@ -1295,13 +1322,13 @@
                 return;
             } else {
                 p = Promise.resolve();
-                instance.forEach(function (val, index) {
-                    p = p.then(function () {
+                instance.forEach(function(val, index) {
+                    p = p.then(function() {
                         // equal to doesnt make sense here
                         if (index < schema.items.length) {
                             report.goDown('[' + index + ']');
                             return self._validateObject(report, schema.items[index], val)
-                                .then(function () {
+                                .then(function() {
                                     report.goUp();
                                 });
                         } else {
@@ -1309,7 +1336,7 @@
                             if (Utils.isObject(schema.additionalItems)) {
                                 report.goDown('[' + index + ']');
                                 return self._validateObject(report, schema.additionalItems, val)
-                                    .then(function () {
+                                    .then(function() {
                                         report.goUp();
                                     });
                             }
@@ -1321,7 +1348,7 @@
         }
     };
 
-    ZSchema.prototype._recurseObject = function (report, schema, instance) {
+    ZSchema.prototype._recurseObject = function(report, schema, instance) {
         // http://json-schema.org/latest/json-schema-validation.html#rfc.section.8.3
 
         var self = this;
@@ -1338,7 +1365,7 @@
         // pp - The property set from "patternProperties". Elements of this set will be called regexes for convenience.
         var pp = Object.keys(schema.patternProperties || {});
         // m - The property name of the child.
-        Utils.forEach(instance, function (propertyValue, m) {
+        Utils.forEach(instance, function(propertyValue, m) {
             // s - The set of schemas for the child instance.
             var s = [];
 
@@ -1348,7 +1375,7 @@
             }
 
             // 2. For each regex in "pp", if it matches "m" successfully, the corresponding schema in "patternProperties" is added to "s".
-            pp.forEach(function (str) {
+            pp.forEach(function(str) {
                 if (Utils.getRegExp(str).test(m) === true) {
                     s.push(schema.patternProperties[str]);
                 }
@@ -1364,16 +1391,16 @@
             // report.expect(s.length !== 0, 'E001', m);
 
             // Instance property value must pass all schemas from s
-            s.forEach(function (sch) {
+            s.forEach(function(sch) {
                 if (this.options.sync) {
                     report.goDown(m);
                     this._validateObject(report, sch, propertyValue);
                     report.goUp();
                 } else {
-                    promise = promise.then(function () {
+                    promise = promise.then(function() {
                         report.goDown(m);
                         return self._validateObject(report, sch, propertyValue)
-                            .then(function () {
+                            .then(function() {
                                 report.goUp();
                             });
                     });
@@ -1384,95 +1411,177 @@
         return this.options.sync ? null : promise;
     };
 
+    /**
+     * add a custom property
+     */
+    ZSchema.prototype.addProperty = function(keyword, fn) {
+        if (typeof fn !== 'function') {
+            return false;
+        }
+
+        SchemaValidators[keyword] = fn;
+        return true;
+    };
+
     /*
      * use this functions to validate json schema itself
      * every code here SHOULD reference json schema specification
      */
     var SchemaValidators = {
-        $ref: function (report, schema) {
+        $ref: function(report, schema) {
             // http://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-07
             // http://tools.ietf.org/html/draft-pbryan-zyp-json-ref-03
-            report.expect(Utils.isString(schema.$ref), 'KEYWORD_TYPE_EXPECTED', {keyword: '$ref', type: 'string'});
+            report.expect(Utils.isString(schema.$ref), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: '$ref',
+                type: 'string'
+            });
         },
-        $schema: function (report, schema) {
+        $schema: function(report, schema) {
             // http://json-schema.org/latest/json-schema-core.html#rfc.section.6
-            report.expect(Utils.isString(schema.$schema), 'KEYWORD_TYPE_EXPECTED', {keyword: '$schema', type: 'string'});
+            report.expect(Utils.isString(schema.$schema), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: '$schema',
+                type: 'string'
+            });
         },
-        multipleOf: function (report, schema) {
+        multipleOf: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.1.1
-            var fine = report.expect(Utils.isNumber(schema.multipleOf), 'KEYWORD_TYPE_EXPECTED', {keyword: 'multipleOf', type: 'number'});
-            if (!fine) { return; }
-            report.expect(schema.multipleOf > 0, 'KEYWORD_MUST_BE', { keyword: 'multipleOf', expression: 'strictly greater than 0'});
+            var fine = report.expect(Utils.isNumber(schema.multipleOf), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'multipleOf',
+                type: 'number'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.multipleOf > 0, 'KEYWORD_MUST_BE', {
+                keyword: 'multipleOf',
+                expression: 'strictly greater than 0'
+            });
         },
-        maximum: function (report, schema) {
+        maximum: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.1
-            report.expect(Utils.isNumber(schema.maximum), 'KEYWORD_TYPE_EXPECTED', {keyword: 'maximum', type: 'number'});
+            report.expect(Utils.isNumber(schema.maximum), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'maximum',
+                type: 'number'
+            });
         },
-        exclusiveMaximum: function (report, schema) {
+        exclusiveMaximum: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.1
             var fine = report.expect(Utils.isBoolean(schema.exclusiveMaximum),
-                                     'KEYWORD_TYPE_EXPECTED', {keyword: 'exclusiveMaximum', type: 'boolean'});
-            if (!fine) { return; }
-            report.expect(schema.maximum !== undefined, 'KEYWORD_DEPENDENCY', {keyword1: 'exclusiveMaximum', keyword2: 'maximum'});
+                'KEYWORD_TYPE_EXPECTED', {
+                    keyword: 'exclusiveMaximum',
+                    type: 'boolean'
+                });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.maximum !== undefined, 'KEYWORD_DEPENDENCY', {
+                keyword1: 'exclusiveMaximum',
+                keyword2: 'maximum'
+            });
         },
-        minimum: function (report, schema) {
+        minimum: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.1
-            report.expect(Utils.isNumber(schema.minimum), 'KEYWORD_TYPE_EXPECTED', {keyword: 'minimum', type: 'number'});
+            report.expect(Utils.isNumber(schema.minimum), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'minimum',
+                type: 'number'
+            });
         },
-        exclusiveMinimum: function (report, schema) {
+        exclusiveMinimum: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.1
             var fine = report.expect(Utils.isBoolean(schema.exclusiveMinimum),
-                                     'KEYWORD_TYPE_EXPECTED', {keyword: 'exclusiveMinimum', type: 'boolean'});
-            if (!fine) { return; }
-            report.expect(schema.minimum !== undefined, 'KEYWORD_DEPENDENCY', {keyword1: 'exclusiveMinimum', keyword2: 'minimum'});
+                'KEYWORD_TYPE_EXPECTED', {
+                    keyword: 'exclusiveMinimum',
+                    type: 'boolean'
+                });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.minimum !== undefined, 'KEYWORD_DEPENDENCY', {
+                keyword1: 'exclusiveMinimum',
+                keyword2: 'minimum'
+            });
         },
-        maxLength: function (report, schema) {
+        maxLength: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.1.1
-            var fine = report.expect(Utils.isInteger(schema.maxLength), 'KEYWORD_TYPE_EXPECTED', {keyword: 'maxLength', type: 'integer'});
-            if (!fine) { return; }
-            report.expect(schema.maxLength >= 0, 'KEYWORD_MUST_BE', {keyword: 'maxLength', expression: 'greater than, or equal to 0'});
+            var fine = report.expect(Utils.isInteger(schema.maxLength), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'maxLength',
+                type: 'integer'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.maxLength >= 0, 'KEYWORD_MUST_BE', {
+                keyword: 'maxLength',
+                expression: 'greater than, or equal to 0'
+            });
         },
-        minLength: function (report, schema) {
+        minLength: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.2.1
-            var fine = report.expect(Utils.isInteger(schema.minLength), 'KEYWORD_TYPE_EXPECTED', {keyword: 'minLength', type: 'integer'});
-            if (!fine) { return; }
-            report.expect(schema.minLength >= 0, 'KEYWORD_MUST_BE', {keyword: 'minLength', expression: 'greater than, or equal to 0'});
+            var fine = report.expect(Utils.isInteger(schema.minLength), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'minLength',
+                type: 'integer'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.minLength >= 0, 'KEYWORD_MUST_BE', {
+                keyword: 'minLength',
+                expression: 'greater than, or equal to 0'
+            });
         },
-        pattern: function (report, schema) {
+        pattern: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.3.1
-            var fine = report.expect(Utils.isString(schema.pattern), 'KEYWORD_TYPE_EXPECTED', {keyword: 'pattern', type: 'string'});
-            if (!fine) { return; }
+            var fine = report.expect(Utils.isString(schema.pattern), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'pattern',
+                type: 'string'
+            });
+            if (!fine) {
+                return;
+            }
             try {
                 Utils.getRegExp(schema.pattern);
             } catch (e) {
-                report.addError('KEYWORD_PATTERN', {keyword: 'pattern', pattern: schema.pattern});
+                report.addError('KEYWORD_PATTERN', {
+                    keyword: 'pattern',
+                    pattern: schema.pattern
+                });
             }
         },
-        additionalItems: function (report, schema) {
+        additionalItems: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.1
             var isBoolean = Utils.isBoolean(schema.additionalItems);
             var isObject = Utils.isObject(schema.additionalItems);
-            var fine = report.expect(isBoolean || isObject, 'KEYWORD_TYPE_EXPECTED', {keyword: 'additionalItems', type: ['boolean', 'object']});
-            if (!fine) { return; }
+            var fine = report.expect(isBoolean || isObject, 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'additionalItems',
+                type: ['boolean', 'object']
+            });
+            if (!fine) {
+                return;
+            }
             if (isObject) {
                 report.goDown('additionalItems');
                 this._validateSchema(report, schema.additionalItems);
                 report.goUp();
             }
         },
-        items: function (report, schema) {
+        items: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.1
             var self = this;
             var isArray = Utils.isArray(schema.items);
             var isObject = Utils.isObject(schema.items);
-            var fine = report.expect(isArray || isObject, 'KEYWORD_TYPE_EXPECTED', {keyword: 'items', type: ['array', 'object']});
-            if (!fine) { return; }
+            var fine = report.expect(isArray || isObject, 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'items',
+                type: ['array', 'object']
+            });
+            if (!fine) {
+                return;
+            }
             if (isObject) {
                 report.goDown('items');
                 this._validateSchema(report, schema.items);
                 report.goUp();
             } else if (isArray) {
-                schema.items.forEach(function (obj, index) {
+                schema.items.forEach(function(obj, index) {
                     report.goDown('items[' + index + ']');
                     self._validateSchema(report, obj);
                     report.goUp();
@@ -1480,69 +1589,132 @@
             }
             // custom - strict mode
             if (this.options.forceAdditional === true) {
-                report.expect(schema.additionalItems !== undefined, 'KEYWORD_UNDEFINED_STRICT', {keyword: 'additionalItems'});
+                report.expect(schema.additionalItems !== undefined, 'KEYWORD_UNDEFINED_STRICT', {
+                    keyword: 'additionalItems'
+                });
             }
         },
-        maxItems: function (report, schema) {
+        maxItems: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.2.1
-            var fine = report.expect(Utils.isInteger(schema.maxItems), 'KEYWORD_TYPE_EXPECTED', {keyword: 'maxItems', type: 'integer'});
-            if (!fine) { return; }
-            report.expect(schema.maxItems >= 0, 'KEYWORD_MUST_BE', {keyword: 'maxItems', expression: 'greater than, or equal to 0'});
+            var fine = report.expect(Utils.isInteger(schema.maxItems), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'maxItems',
+                type: 'integer'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.maxItems >= 0, 'KEYWORD_MUST_BE', {
+                keyword: 'maxItems',
+                expression: 'greater than, or equal to 0'
+            });
         },
-        minItems: function (report, schema) {
+        minItems: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.3.1
-            var fine = report.expect(Utils.isInteger(schema.minItems), 'KEYWORD_TYPE_EXPECTED', {keyword: 'minItems', type: 'integer'});
-            if (!fine) { return; }
-            report.expect(schema.minItems >= 0, 'KEYWORD_MUST_BE', {keyword: 'minItems', expression: 'greater than, or equal to 0'});
+            var fine = report.expect(Utils.isInteger(schema.minItems), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'minItems',
+                type: 'integer'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.minItems >= 0, 'KEYWORD_MUST_BE', {
+                keyword: 'minItems',
+                expression: 'greater than, or equal to 0'
+            });
         },
-        uniqueItems: function (report, schema) {
+        uniqueItems: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.4.1
-            report.expect(Utils.isBoolean(schema.uniqueItems), 'KEYWORD_TYPE_EXPECTED', {keyword: 'uniqueItems', type: 'boolean'});
+            report.expect(Utils.isBoolean(schema.uniqueItems), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'uniqueItems',
+                type: 'boolean'
+            });
         },
-        maxProperties: function (report, schema) {
+        maxProperties: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.1.1
-            var fine = report.expect(Utils.isInteger(schema.maxProperties), 'KEYWORD_TYPE_EXPECTED', {keyword: 'maxProperties', type: 'integer'});
-            if (!fine) { return; }
-            report.expect(schema.maxProperties >= 0, 'KEYWORD_MUST_BE', {keyword: 'maxProperties', expression: 'greater than, or equal to 0'});
+            var fine = report.expect(Utils.isInteger(schema.maxProperties), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'maxProperties',
+                type: 'integer'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.maxProperties >= 0, 'KEYWORD_MUST_BE', {
+                keyword: 'maxProperties',
+                expression: 'greater than, or equal to 0'
+            });
         },
-        minProperties: function (report, schema) {
+        minProperties: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.2.1
-            var fine = report.expect(Utils.isInteger(schema.minProperties), 'KEYWORD_TYPE_EXPECTED', {keyword: 'minProperties', type: 'integer'});
-            if (!fine) { return; }
-            report.expect(schema.minProperties >= 0, 'KEYWORD_MUST_BE', {keyword: 'minProperties', expression: 'greater than, or equal to 0'});
+            var fine = report.expect(Utils.isInteger(schema.minProperties), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'minProperties',
+                type: 'integer'
+            });
+            if (!fine) {
+                return;
+            }
+            report.expect(schema.minProperties >= 0, 'KEYWORD_MUST_BE', {
+                keyword: 'minProperties',
+                expression: 'greater than, or equal to 0'
+            });
         },
-        required: function (report, schema) {
+        required: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.3.1
             var fine;
-            fine = report.expect(Utils.isArray(schema.required), 'KEYWORD_TYPE_EXPECTED', {keyword: 'required', type: 'array'});
-            if (!fine) { return; }
+            fine = report.expect(Utils.isArray(schema.required), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'required',
+                type: 'array'
+            });
+            if (!fine) {
+                return;
+            }
             fine = report.expect(schema.required.length > 0,
-                                 'KEYWORD_MUST_BE', {keyword: 'required', expression: 'an array with at least one element'});
-            if (!fine) { return; }
-            schema.required.forEach(function (el) {
-                report.expect(Utils.isString(el), 'KEYWORD_VALUE_TYPE', {keyword: 'required', type: 'string'});
+                'KEYWORD_MUST_BE', {
+                    keyword: 'required',
+                    expression: 'an array with at least one element'
+                });
+            if (!fine) {
+                return;
+            }
+            schema.required.forEach(function(el) {
+                report.expect(Utils.isString(el), 'KEYWORD_VALUE_TYPE', {
+                    keyword: 'required',
+                    type: 'string'
+                });
             }, this);
-            report.expect(Utils.isUniqueArray(schema.required), 'KEYWORD_MUST_BE', {keyword: 'required', expression: 'an array with unique items'});
+            report.expect(Utils.isUniqueArray(schema.required), 'KEYWORD_MUST_BE', {
+                keyword: 'required',
+                expression: 'an array with unique items'
+            });
         },
-        additionalProperties: function (report, schema) {
+        additionalProperties: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
             var isBoolean = Utils.isBoolean(schema.additionalProperties);
             var isObject = Utils.isObject(schema.additionalProperties);
-            var fine = report.expect(isBoolean || isObject, 'KEYWORD_TYPE_EXPECTED', {keyword: 'additionalProperties', type: ['boolean', 'object']});
-            if (!fine) { return; }
+            var fine = report.expect(isBoolean || isObject, 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'additionalProperties',
+                type: ['boolean', 'object']
+            });
+            if (!fine) {
+                return;
+            }
             if (isObject) {
                 report.goDown('additionalProperties');
                 this._validateSchema(report, schema.additionalProperties);
                 report.goUp();
             }
         },
-        properties: function (report, schema) {
+        properties: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
             var self = this;
 
-            var fine = report.expect(Utils.isObject(schema.properties), 'KEYWORD_TYPE_EXPECTED', {keyword: 'properties', type: 'object'});
-            if (!fine) { return; }
-            Utils.forEach(schema.properties, function (val, propName) {
+            var fine = report.expect(Utils.isObject(schema.properties), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'properties',
+                type: 'object'
+            });
+            if (!fine) {
+                return;
+            }
+            Utils.forEach(schema.properties, function(val, propName) {
                 report.goDown('properties[' + propName + ']');
                 self._validateSchema(report, val);
                 report.goUp();
@@ -1550,76 +1722,127 @@
 
             // custom - strict mode
             if (this.options.forceAdditional === true) {
-                report.expect(schema.additionalProperties !== undefined, 'KEYWORD_UNDEFINED_STRICT', {keyword: 'additionalProperties'});
+                report.expect(schema.additionalProperties !== undefined, 'KEYWORD_UNDEFINED_STRICT', {
+                    keyword: 'additionalProperties'
+                });
             }
         },
-        patternProperties: function (report, schema) {
+        patternProperties: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.1
             var self = this;
             var fine = report.expect(Utils.isObject(schema.patternProperties),
-                                     'KEYWORD_TYPE_EXPECTED', {keyword: 'patternProperties', type: 'object'});
-            if (!fine) { return; }
-            Utils.forEach(schema.patternProperties, function (val, propName) {
+                'KEYWORD_TYPE_EXPECTED', {
+                    keyword: 'patternProperties',
+                    type: 'object'
+                });
+            if (!fine) {
+                return;
+            }
+            Utils.forEach(schema.patternProperties, function(val, propName) {
                 try {
                     Utils.getRegExp(propName);
                 } catch (e) {
-                    report.addError('KEYWORD_PATTERN', {keyword: 'patternProperties', pattern: propName});
+                    report.addError('KEYWORD_PATTERN', {
+                        keyword: 'patternProperties',
+                        pattern: propName
+                    });
                 }
                 report.goDown('patternProperties[' + propName + ']');
                 self._validateSchema(report, val);
                 report.goUp();
             });
         },
-        dependencies: function (report, schema) {
+        dependencies: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.5.1
 
             var self = this;
 
             var fine = report.expect(Utils.isObject(schema.dependencies), 'KEYWORD_TYPE_EXPECTED', 'dependencies', 'object');
-            if (!fine) { return; }
-            Utils.forEach(schema.dependencies, function (schemaDependency, schemaKey) {
+            if (!fine) {
+                return;
+            }
+            Utils.forEach(schema.dependencies, function(schemaDependency, schemaKey) {
 
                 var isObject = Utils.isObject(schemaDependency);
                 var isArray = Utils.isArray(schemaDependency);
-                report.expect(isObject || isArray, 'KEYWORD_VALUE_TYPE', {keyword: 'dependencies', type: 'object or array'});
+                report.expect(isObject || isArray, 'KEYWORD_VALUE_TYPE', {
+                    keyword: 'dependencies',
+                    type: 'object or array'
+                });
                 if (isObject) {
                     report.goDown('dependencies[' + schemaKey + ']');
                     self._validateSchema(report, schemaDependency);
                     report.goUp();
                 } else if (isArray) {
-                    report.expect(schemaDependency.length > 0, 'KEYWORD_MUST_BE', {keyword: 'dependencies', expression: 'not empty array'});
-                    schemaDependency.forEach(function (el) {
-                        report.expect(Utils.isString(el), 'KEYWORD_VALUE_TYPE', {keyword: 'dependensices', type: 'string'});
+                    report.expect(schemaDependency.length > 0, 'KEYWORD_MUST_BE', {
+                        keyword: 'dependencies',
+                        expression: 'not empty array'
                     });
-                    report.expect(Utils.isUniqueArray(schemaDependency), {keyword: 'dependencies', expression: 'an array with unique items'});
+                    schemaDependency.forEach(function(el) {
+                        report.expect(Utils.isString(el), 'KEYWORD_VALUE_TYPE', {
+                            keyword: 'dependensices',
+                            type: 'string'
+                        });
+                    });
+                    report.expect(Utils.isUniqueArray(schemaDependency), {
+                        keyword: 'dependencies',
+                        expression: 'an array with unique items'
+                    });
                 }
             });
         },
-        enum: function (report, schema) {
+        enum: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.1.1
             var fine;
-            fine = report.expect(Utils.isArray(schema.enum), 'KEYWORD_TYPE_EXPECTED', {keyword: 'enum', type: 'array'});
-            if (!fine) { return; }
-            fine = report.expect(schema.enum.length > 0, 'KEYWORD_MUST_BE', {keyword: 'enum', expression: 'an array with at least one element'});
-            if (!fine) { return; }
-            fine = report.expect(Utils.isUniqueArray(schema.enum), 'KEYWORD_MUST_BE', {keyword: 'enum', expression: 'an array with unique items'});
+            fine = report.expect(Utils.isArray(schema.enum), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'enum',
+                type: 'array'
+            });
+            if (!fine) {
+                return;
+            }
+            fine = report.expect(schema.enum.length > 0, 'KEYWORD_MUST_BE', {
+                keyword: 'enum',
+                expression: 'an array with at least one element'
+            });
+            if (!fine) {
+                return;
+            }
+            fine = report.expect(Utils.isUniqueArray(schema.enum), 'KEYWORD_MUST_BE', {
+                keyword: 'enum',
+                expression: 'an array with unique items'
+            });
         },
-        type: function (report, schema) {
+        type: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.1
             var primitiveTypes = ['array', 'boolean', 'integer', 'number', 'null', 'object', 'string'];
             var primitiveTypeStr = primitiveTypes.join(',');
             var isString = Utils.isString(schema.type);
             var isArray = Utils.isArray(schema.type);
             var fine;
-            fine = report.expect(isString || isArray, 'KEYWORD_TYPE_EXPECTED', {keyword: 'type', type: ['string', 'array']});
-            if (!fine) { return; }
+            fine = report.expect(isString || isArray, 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'type',
+                type: ['string', 'array']
+            });
+            if (!fine) {
+                return;
+            }
             if (isArray) {
-                schema.type.forEach(function (el) {
-                    report.expect(primitiveTypes.indexOf(el) !== -1, 'KEYWORD_TYPE_EXPECTED', { keyword: 'type', type: primitiveTypeStr});
+                schema.type.forEach(function(el) {
+                    report.expect(primitiveTypes.indexOf(el) !== -1, 'KEYWORD_TYPE_EXPECTED', {
+                        keyword: 'type',
+                        type: primitiveTypeStr
+                    });
                 }, this);
-                report.expect(Utils.isUniqueArray(schema.type), 'KEYWORD_MUST_BE', {keyword: 'type', expression: 'an object with unique properties'});
+                report.expect(Utils.isUniqueArray(schema.type), 'KEYWORD_MUST_BE', {
+                    keyword: 'type',
+                    expression: 'an object with unique properties'
+                });
             } else {
-                report.expect(primitiveTypes.indexOf(schema.type) !== -1, 'KEYWORD_TYPE_EXPECTED', { keyword: 'type', type: primitiveTypeStr});
+                report.expect(primitiveTypes.indexOf(schema.type) !== -1, 'KEYWORD_TYPE_EXPECTED', {
+                    keyword: 'type',
+                    type: primitiveTypeStr
+                });
             }
             if (this.options.noZeroLengthStrings === true) {
                 if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
@@ -1631,205 +1854,284 @@
             if (this.options.forceProperties === true) {
                 if (schema.type === 'object' || isArray && schema.type.indexOf('object') !== -1) {
                     report.expect(schema.properties !== undefined || schema.patternProperties !== undefined,
-                                  'KEYWORD_UNDEFINED_STRICT', {keyword: 'properties'});
+                        'KEYWORD_UNDEFINED_STRICT', {
+                            keyword: 'properties'
+                        });
                 }
             }
             if (this.options.forceItems === true) {
                 if (schema.type === 'array' || isArray && schema.type.indexOf('array') !== -1) {
-                    report.expect(schema.items !== undefined, 'KEYWORD_UNDEFINED_STRICT', {keyword: 'items'});
+                    report.expect(schema.items !== undefined, 'KEYWORD_UNDEFINED_STRICT', {
+                        keyword: 'items'
+                    });
                 }
             }
             if (this.options.forceMaxLength === true) {
                 if (schema.type === 'string' || isArray && schema.type.indexOf('string') !== -1) {
                     report.expect(schema.maxLength !== undefined || schema.format !== undefined || schema.enum !== undefined,
-                                  'KEYWORD_UNDEFINED_STRICT', {keyword: 'maxLength'});
+                        'KEYWORD_UNDEFINED_STRICT', {
+                            keyword: 'maxLength'
+                        });
                 }
             }
         },
-        allOf: function (report, schema) {
+        allOf: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.3.1
 
             var self = this;
 
             var fine;
-            fine = report.expect(Utils.isArray(schema.allOf), 'KEYWORD_TYPE_EXPECTED', {keyword: 'allOf', type: 'array'});
-            if (!fine) { return; }
-            fine = report.expect(schema.allOf.length > 0, 'KEYWORD_MUST_BE', {keyword: 'allOf', expression: 'an array with at least one element'});
-            if (!fine) { return; }
-            schema.allOf.forEach(function (sch, index) {
+            fine = report.expect(Utils.isArray(schema.allOf), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'allOf',
+                type: 'array'
+            });
+            if (!fine) {
+                return;
+            }
+            fine = report.expect(schema.allOf.length > 0, 'KEYWORD_MUST_BE', {
+                keyword: 'allOf',
+                expression: 'an array with at least one element'
+            });
+            if (!fine) {
+                return;
+            }
+            schema.allOf.forEach(function(sch, index) {
                 report.goDown('allOf[' + index + ']');
                 self._validateSchema(report, sch);
                 report.goUp();
             });
         },
-        anyOf: function (report, schema) {
+        anyOf: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.4.1
 
             var self = this;
 
             var fine;
-            fine = report.expect(Utils.isArray(schema.anyOf), 'KEYWORD_TYPE_EXPECTED', {keyword: 'anyOf', type: 'array'});
-            if (!fine) { return; }
-            fine = report.expect(schema.anyOf.length > 0, 'KEYWORD_MUST_BE', {keyword: 'anyOf', expression: 'an array with at least one element'});
-            if (!fine) { return; }
-            schema.anyOf.forEach(function (sch, index) {
+            fine = report.expect(Utils.isArray(schema.anyOf), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'anyOf',
+                type: 'array'
+            });
+            if (!fine) {
+                return;
+            }
+            fine = report.expect(schema.anyOf.length > 0, 'KEYWORD_MUST_BE', {
+                keyword: 'anyOf',
+                expression: 'an array with at least one element'
+            });
+            if (!fine) {
+                return;
+            }
+            schema.anyOf.forEach(function(sch, index) {
                 report.goDown('anyOf[' + index + ']');
                 self._validateSchema(report, sch);
                 report.goUp();
             });
         },
-        oneOf: function (report, schema) {
+        oneOf: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.5.1
 
             var self = this;
 
             var fine;
-            fine = report.expect(Utils.isArray(schema.oneOf), 'KEYWORD_TYPE_EXPECTED', {keyword: 'oneOf', type: 'array'});
-            if (!fine) { return; }
-            fine = report.expect(schema.oneOf.length > 0, 'KEYWORD_MUST_BE', {keyword: 'oneOf', expression: 'an array with at least one element'});
-            if (!fine) { return; }
+            fine = report.expect(Utils.isArray(schema.oneOf), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'oneOf',
+                type: 'array'
+            });
+            if (!fine) {
+                return;
+            }
+            fine = report.expect(schema.oneOf.length > 0, 'KEYWORD_MUST_BE', {
+                keyword: 'oneOf',
+                expression: 'an array with at least one element'
+            });
+            if (!fine) {
+                return;
+            }
 
-            schema.oneOf.forEach(function (sch, index) {
+            schema.oneOf.forEach(function(sch, index) {
                 report.goDown('oneOf[' + index + ']');
                 self._validateSchema(report, sch);
                 report.goUp();
             });
         },
-        not: function (report, schema) {
+        not: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.6.1
             var fine;
-            fine = report.expect(Utils.isObject(schema.not), 'KEYWORD_TYPE_EXPECTED', {keyword: 'not', type: 'object'});
-            if (!fine) { return; }
+            fine = report.expect(Utils.isObject(schema.not), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'not',
+                type: 'object'
+            });
+            if (!fine) {
+                return;
+            }
             report.goDown('not');
             this._validateSchema(report, schema.not);
             report.goUp();
         },
-        definitions: function (report, schema) {
+        definitions: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.7.1
             var self = this;
             var fine;
-            fine = report.expect(Utils.isObject(schema.definitions), 'KEYWORD_TYPE_EXPECTED', {keyword: 'definitions', type: 'object'});
-            if (!fine) { return; }
-            Utils.forEach(schema.definitions, function (obj, index) {
+            fine = report.expect(Utils.isObject(schema.definitions), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'definitions',
+                type: 'object'
+            });
+            if (!fine) {
+                return;
+            }
+            Utils.forEach(schema.definitions, function(obj, index) {
                 report.goDown('definitions[' + index + ']');
                 self._validateSchema(report, obj);
                 report.goUp();
             });
         },
-        format: function (report, schema) {
+        format: function(report, schema) {
             var fine;
-            fine = report.expect(Utils.isString(schema.format), 'KEYWORD_TYPE_EXPECTED', {keyword: 'format', type: 'string'});
-            if (!fine) { return; }
+            fine = report.expect(Utils.isString(schema.format), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'format',
+                type: 'string'
+            });
+            if (!fine) {
+                return;
+            }
             fine = report.expect(Utils.isFunction(FormatValidators[schema.format]) || Utils.isFunction(CustomFormatValidators[schema.format]),
-                                 'UNKNOWN_FORMAT', {format: schema.format});
-            if (!fine) { return; }
+                'UNKNOWN_FORMAT', {
+                    format: schema.format
+                });
+            if (!fine) {
+                return;
+            }
         },
-        id: function (report, schema) {
+        id: function(report, schema) {
             // http://json-schema.org/latest/json-schema-core.html#rfc.section.7.2
-            report.expect(Utils.isString(schema.id), 'KEYWORD_TYPE_EXPECTED', {keyword: 'id', type: 'string'});
+            report.expect(Utils.isString(schema.id), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'id',
+                type: 'string'
+            });
         },
-        title: function (report, schema) {
+        title: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.1
-            report.expect(Utils.isString(schema.title), 'KEYWORD_TYPE_EXPECTED', {keyword: 'title', type: 'string'});
+            report.expect(Utils.isString(schema.title), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'title',
+                type: 'string'
+            });
         },
-        description: function (report, schema) {
+        description: function(report, schema) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.1
-            report.expect(Utils.isString(schema.description), 'KEYWORD_TYPE_EXPECTED', {keyword: 'description', type: 'string'});
+            report.expect(Utils.isString(schema.description), 'KEYWORD_TYPE_EXPECTED', {
+                keyword: 'description',
+                type: 'string'
+            });
         },
-        'default': function () { /*report, schema*/
+        'default': function() { /*report, schema*/
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.6.2
         },
         // ---- custom keys used by ZSchema
-        __$compiled: function (report, schema) {
+        __$compiled: function(report, schema) {
             ZSchema.expect.boolean(schema.__$compiled);
         },
-        __$validated: function (report, schema) {
+        __$validated: function(report, schema) {
             ZSchema.expect.boolean(schema.__$validated);
         }
     };
 
     var InstanceValidators = {
-        multipleOf: function (report, schema, instance) {
+        multipleOf: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.1.2
             if (!Utils.isNumber(instance)) {
                 return;
             }
             var isInteger = Utils.whatIs(instance / schema.multipleOf) === 'integer';
             report.expect(isInteger,
-                'MULTIPLE_OF',
-                { value: instance, multipleOf: schema.multipleOf}
+                'MULTIPLE_OF', {
+                    value: instance,
+                    multipleOf: schema.multipleOf
+                }
             );
         },
-        maximum: function (report, schema, instance) {
+        maximum: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.2.2
             if (!Utils.isNumber(instance)) {
                 return;
             }
             if (schema.exclusiveMaximum !== true) {
                 report.expect(instance <= schema.maximum,
-                    'MAXIMUM',
-                    { value: instance, maximum: schema.maximum}
+                    'MAXIMUM', {
+                        value: instance,
+                        maximum: schema.maximum
+                    }
                 );
             } else {
                 report.expect(instance < schema.maximum,
-                    'MAXIMUM_EXCLUSIVE',
-                    { value: instance, maximum: schema.maximum}
+                    'MAXIMUM_EXCLUSIVE', {
+                        value: instance,
+                        maximum: schema.maximum
+                    }
                 );
             }
         },
-        exclusiveMaximum: function () {
+        exclusiveMaximum: function() {
             // covered in maximum
         },
-        minimum: function (report, schema, instance) {
+        minimum: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.1.3.2
             if (!Utils.isNumber(instance)) {
                 return;
             }
             if (schema.exclusiveMinimum !== true) {
                 report.expect(instance >= schema.minimum,
-                    'MINIMUM',
-                    { value: instance, minimum: schema.minimum}
+                    'MINIMUM', {
+                        value: instance,
+                        minimum: schema.minimum
+                    }
                 );
             } else {
                 report.expect(instance > schema.minimum,
-                    'MINIMUM_EXCLUSIVE',
-                    { value: instance, minimum: schema.minimum}
+                    'MINIMUM_EXCLUSIVE', {
+                        value: instance,
+                        minimum: schema.minimum
+                    }
                 );
             }
         },
-        exclusiveMinimum: function () {
+        exclusiveMinimum: function() {
             // covered in minimum
         },
-        maxLength: function (report, schema, instance) {
+        maxLength: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.1.2
             if (!Utils.isString(instance)) {
                 return;
             }
             report.expect(instance.length <= schema.maxLength,
-                'MAX_LENGTH',
-                { length: instance.length, maximum: schema.maxLength}
+                'MAX_LENGTH', {
+                    length: instance.length,
+                    maximum: schema.maxLength
+                }
             );
         },
-        minLength: function (report, schema, instance) {
+        minLength: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.2.2
             if (!Utils.isString(instance)) {
                 return;
             }
             report.expect(instance.length >= schema.minLength,
-                'MIN_LENGTH',
-                { length: instance.length, minimum: schema.minLength}
+                'MIN_LENGTH', {
+                    length: instance.length,
+                    minimum: schema.minLength
+                }
             );
         },
-        pattern: function (report, schema, instance) {
+        pattern: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.2.3.2
             if (!Utils.isString(instance)) {
                 return;
             }
             report.expect(Utils.getRegExp(schema.pattern).test(instance),
-                'PATTERN',
-                { pattern: schema.pattern});
+                'PATTERN', {
+                    pattern: schema.pattern
+                });
         },
-        additionalItems: function (report, schema, instance) {
+        additionalItems: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.1.2
             if (!Utils.isArray(instance)) {
                 return;
@@ -1841,24 +2143,30 @@
                 report.expect(instance.length <= schema.items.length, 'ARRAY_ADDITIONAL_ITEMS');
             }
         },
-        items: function () { /*report, schema, instance*/
+        items: function() { /*report, schema, instance*/
             // covered in additionalItems
         },
-        maxItems: function (report, schema, instance) {
+        maxItems: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.2.2
             if (!Utils.isArray(instance)) {
                 return;
             }
-            report.expect(instance.length <= schema.maxItems, 'ARRAY_LENGTH_LONG', {length: instance.length, maximum: schema.maxItems});
+            report.expect(instance.length <= schema.maxItems, 'ARRAY_LENGTH_LONG', {
+                length: instance.length,
+                maximum: schema.maxItems
+            });
         },
-        minItems: function (report, schema, instance) {
+        minItems: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.3.2
             if (!Utils.isArray(instance)) {
                 return;
             }
-            report.expect(instance.length >= schema.minItems, 'ARRAY_LENGTH_SHORT', {length: instance.length, minimum: schema.minItems});
+            report.expect(instance.length >= schema.minItems, 'ARRAY_LENGTH_SHORT', {
+                length: instance.length,
+                minimum: schema.minItems
+            });
         },
-        uniqueItems: function (report, schema, instance) {
+        uniqueItems: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.3.4.2
             if (!Utils.isArray(instance)) {
                 return;
@@ -1868,38 +2176,46 @@
                 report.expect(Utils.isUniqueArray(instance, matches), 'ARRAY_UNIQUE', matches);
             }
         },
-        maxProperties: function (report, schema, instance) {
+        maxProperties: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.1.2
             if (!Utils.isObject(instance)) {
                 return;
             }
             var keysCount = Object.keys(instance).length;
-            report.expect(keysCount <= schema.maxProperties, 'OBJECT_PROPERTIES_MAXIMUM', {count: keysCount, maximum: schema.maxProperties});
+            report.expect(keysCount <= schema.maxProperties, 'OBJECT_PROPERTIES_MAXIMUM', {
+                count: keysCount,
+                maximum: schema.maxProperties
+            });
         },
-        minProperties: function (report, schema, instance) {
+        minProperties: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.2.2
             if (!Utils.isObject(instance)) {
                 return;
             }
             var keysCount = Object.keys(instance).length;
-            report.expect(keysCount >= schema.minProperties, 'OBJECT_PROPERTIES_MINIMUM', {count: keysCount, minimum: schema.minProperties});
+            report.expect(keysCount >= schema.minProperties, 'OBJECT_PROPERTIES_MINIMUM', {
+                count: keysCount,
+                minimum: schema.minProperties
+            });
         },
-        required: function (report, schema, instance) {
+        required: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.3.2
             if (!Utils.isObject(instance)) {
                 return;
             }
-            schema.required.forEach(function (reqProperty) {
-                report.expect(instance[reqProperty] !== undefined, 'OBJECT_REQUIRED', {property: reqProperty});
+            schema.required.forEach(function(reqProperty) {
+                report.expect(instance[reqProperty] !== undefined, 'OBJECT_REQUIRED', {
+                    property: reqProperty
+                });
             });
         },
-        additionalProperties: function (report, schema) { /*instance*/
+        additionalProperties: function(report, schema) { /*instance*/
             // covered in properties and patternProperties
             if (schema.properties === undefined && schema.patternProperties === undefined) {
                 return InstanceValidators.properties.apply(this, arguments);
             }
         },
-        properties: function (report, schema, instance) {
+        properties: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.4.2
             if (!Utils.isObject(instance)) {
                 return;
@@ -1916,7 +2232,7 @@
                 // remove from "s" all elements of "p", if any;
                 s = Utils.difference(s, p);
                 // for each regex in "pp", remove all elements of "s" which this regex matches.
-                pp.forEach(function (patternProperty) {
+                pp.forEach(function(patternProperty) {
                     var regExp = Utils.getRegExp(patternProperty);
                     for (var i = s.length - 1; i >= 0; i--) {
                         if (regExp.test(s[i]) === true) {
@@ -1925,16 +2241,18 @@
                     }
                 }, this);
                 // Validation of the instance succeeds if, after these two steps, set "s" is empty.
-                report.expect(s.length === 0, 'OBJECT_ADDITIONAL_PROPERTIES', {properties: s});
+                report.expect(s.length === 0, 'OBJECT_ADDITIONAL_PROPERTIES', {
+                    properties: s
+                });
             }
         },
-        patternProperties: function (report, schema) { /*instance*/
+        patternProperties: function(report, schema) { /*instance*/
             // covered in properties
             if (schema.properties === undefined) {
                 return InstanceValidators.properties.apply(this, arguments);
             }
         },
-        dependencies: function (report, schema, instance) {
+        dependencies: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.4.5.2
 
             if (!Utils.isObject(instance)) {
@@ -1943,14 +2261,17 @@
 
             var promiseArray = [];
 
-            Utils.forEach(schema.dependencies, function (dependency, name) {
+            Utils.forEach(schema.dependencies, function(dependency, name) {
                 if (instance[name] !== undefined) {
                     if (Utils.isObject(dependency)) {
                         // errors will be added to same report
                         promiseArray.push(this._validateObject(report, dependency, instance));
                     } else { // Array
-                        Utils.forEach(dependency, function (requiredProp) {
-                            report.expect(instance[requiredProp] !== undefined, 'OBJECT_DEPENDENCY_KEY', { missing: requiredProp, key: name });
+                        Utils.forEach(dependency, function(requiredProp) {
+                            report.expect(instance[requiredProp] !== undefined, 'OBJECT_DEPENDENCY_KEY', {
+                                missing: requiredProp,
+                                key: name
+                            });
                         });
                     }
                 }
@@ -1958,7 +2279,7 @@
 
             return this.options.sync ? null : Promise.all(promiseArray);
         },
-        enum: function (report, schema, instance) {
+        enum: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.1.2
             var match = false;
             for (var i = 0, l = schema.enum.length; i < l; i++) {
@@ -1967,36 +2288,46 @@
                     break;
                 }
             }
-            report.expect(match, 'ENUM_MISMATCH', {value: instance});
+            report.expect(match, 'ENUM_MISMATCH', {
+                value: instance
+            });
         },
-        type: function (report, schema, instance) {
+        type: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.2.2
             var instanceType = Utils.whatIs(instance);
             if (Utils.isString(schema.type)) {
                 report.expect(instanceType === schema.type || instanceType === 'integer' && schema.type === 'number',
-                    'INVALID_TYPE', { expected: schema.type, type: instanceType});
+                    'INVALID_TYPE', {
+                        expected: schema.type,
+                        type: instanceType
+                    });
             } else {
                 var one = schema.type.indexOf(instanceType) !== -1;
                 var two = instanceType === 'integer' && schema.type.indexOf('number') !== -1;
-                report.expect(one || two, 'INVALID_TYPE', { expected: schema.type, type: instanceType});
+                report.expect(one || two, 'INVALID_TYPE', {
+                    expected: schema.type,
+                    type: instanceType
+                });
             }
         },
-        allOf: function (report, schema, instance) {
+        allOf: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.3.2
             if (this.options.sync) {
                 var i = schema.allOf.length;
                 while (i--) {
                     // _validateObject returns isValid boolean
-                    if (!this._validateObject(report, schema.allOf[i], instance)) { break; }
+                    if (!this._validateObject(report, schema.allOf[i], instance)) {
+                        break;
+                    }
                 }
             } else {
                 var self = this;
-                return Promise.all(schema.allOf.map(function (sch) {
+                return Promise.all(schema.allOf.map(function(sch) {
                     return self._validateObject(report, sch, instance);
                 }));
             }
         },
-        anyOf: function (report, schema, instance) {
+        anyOf: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.4.2
             var subReports = [];
             if (this.options.sync) {
@@ -2013,12 +2344,14 @@
                 var self = this,
                     passes = 0,
                     p = Promise.resolve();
-                schema.anyOf.forEach(function (anyOf) {
-                    p = p.then(function () {
-                        if (passes > 0) { return; }
+                schema.anyOf.forEach(function(anyOf) {
+                    p = p.then(function() {
+                        if (passes > 0) {
+                            return;
+                        }
                         var subReport = new Report(report);
                         return self._validateObject(subReport, anyOf, instance)
-                            .then(function () {
+                            .then(function() {
                                 if (subReport.isValid()) {
                                     passes++;
                                 } else {
@@ -2027,12 +2360,12 @@
                             });
                     });
                 });
-                return p.then(function () {
+                return p.then(function() {
                     report.expect(passes >= 1, 'ANY_OF_MISSING', {}, passes === 0 ? subReports : null);
                 });
             }
         },
-        oneOf: function (report, schema, instance) {
+        oneOf: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.5.2
             var passes = 0;
             var subReports = [];
@@ -2054,10 +2387,10 @@
                 return finish();
             } else {
                 var self = this;
-                return Promise.all(schema.oneOf.map(function (oneOf) {
+                return Promise.all(schema.oneOf.map(function(oneOf) {
                     var subReport = new Report(report);
                     return self._validateObject(subReport, oneOf, instance)
-                        .then(function () {
+                        .then(function() {
                             if (subReport.isValid()) {
                                 passes++;
                             } else {
@@ -2067,7 +2400,7 @@
                 })).then(finish);
             }
         },
-        not: function (report, schema, instance) {
+        not: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.6.2
 
             var subReport = new Report(report);
@@ -2083,17 +2416,20 @@
                 return this._validateObject(subReport, schema.not, instance).then(finish);
             }
         },
-        definitions: function () { /*report, schema, instance*/
+        definitions: function() { /*report, schema, instance*/
             //http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.5.7.2
             //none
         },
-        format: function (report, schema, instance) {
+        format: function(report, schema, instance) {
             // http://json-schema.org/latest/json-schema-validation.html#rfc.section.7.2
 
             var p;
 
             if (typeof FormatValidators[schema.format] === 'function') { // built-in format (sync)
-                report.expect(FormatValidators[schema.format](instance, this), 'FORMAT', {format: schema.format, error: instance});
+                report.expect(FormatValidators[schema.format](instance, this), 'FORMAT', {
+                    format: schema.format,
+                    error: instance
+                });
                 return;
             }
 
@@ -2102,10 +2438,15 @@
                 try {
                     p = CustomFormatValidators[schema.format](instance);
                     if (p !== true) {
-                        report.addError('FORMAT', {format: schema.format});
+                        report.addError('FORMAT', {
+                            format: schema.format
+                        });
                     }
                 } catch (err) {
-                    report.addError('FORMAT', {format: schema.format, error: err});
+                    report.addError('FORMAT', {
+                        format: schema.format,
+                        error: err
+                    });
                 }
 
                 return;
@@ -2124,14 +2465,20 @@
             }
 
             return deferred.promise
-                .then(function (valid) { // validators may return (resolve with) true/false
+                .then(function(valid) { // validators may return (resolve with) true/false
                     if (!valid) {
-                        report.addError('FORMAT', {format: schema.format});
+                        report.addError('FORMAT', {
+                            format: schema.format
+                        });
                     }
                 })
-                .catch(function (err) { // validators may throw Error or return rejected promise
-                    report.addError('FORMAT', {format: schema.format, error: err});
+                .
+            catch (function(err) { // validators may throw Error or return rejected promise
+                report.addError('FORMAT', {
+                    format: schema.format,
+                    error: err
                 });
+            });
         }
     };
 
